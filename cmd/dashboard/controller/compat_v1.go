@@ -11,16 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/naiba/nezha/model"
-	"github.com/naiba/nezha/pkg/mygin"
 	"github.com/naiba/nezha/pkg/utils"
 	"github.com/naiba/nezha/service/singleton"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/sync/singleflight"
 )
 
 type compatV1 struct {
 	r            gin.IRouter
 	requestGroup singleflight.Group
+}
+
+type V1Response[T any] struct {
+	Success bool   `json:"success,omitempty"`
+	Data    T      `json:"data,omitempty"`
+	Error   string `json:"error,omitempty"`
 }
 
 func (cv *compatV1) serve() {
@@ -38,15 +42,10 @@ func (cv *compatV1) serve() {
 func (cv *compatV1) serverStream(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		mygin.ShowErrorPage(c, mygin.ErrInfo{
-			Code: http.StatusInternalServerError,
-			Title: singleton.Localizer.MustLocalize(&i18n.LocalizeConfig{
-				MessageID: "NetworkError",
-			}),
-			Msg:  "Websocket协议切换失败",
-			Link: "/",
-			Btn:  "返回首页",
-		}, true)
+		c.JSON(http.StatusInternalServerError, V1Response[any]{
+			Success: false,
+			Error:   err.Error(),
+		})
 		return
 	}
 	defer conn.Close()
@@ -161,7 +160,10 @@ func (cv *compatV1) listServerGroup(c *gin.Context) {
 		tagID++ // 虽然无法保证 tagID 的唯一性，但至少在绝大部分情况下不会出问题
 	}
 
-	c.JSON(200, sgRes)
+	c.JSON(200, V1Response[[]model.V1ServerGroupResponseItem]{
+		Success: true,
+		Data:    sgRes,
+	})
 }
 
 func (cv *compatV1) showService(c *gin.Context) {
@@ -205,7 +207,10 @@ func (cv *compatV1) showService(c *gin.Context) {
 		}, nil
 	})
 	if err != nil {
-		c.JSON(500, gin.H{"code": 500, "message": "获取服务状态失败"})
+		c.JSON(500, V1Response[any]{
+			Success: false,
+			Error:   err.Error(),
+		})
 		return
 	}
 
@@ -213,21 +218,30 @@ func (cv *compatV1) showService(c *gin.Context) {
 		Services:           res.([]interface{})[0].(map[uint64]model.V1ServiceResponseItem),
 		CycleTransferStats: res.([]interface{})[1].(map[uint64]model.V1CycleTransferStats),
 	}
-	c.JSON(200, response)
+	c.JSON(200, V1Response[model.V1ServiceResponse]{
+		Success: true,
+		Data:    response,
+	})
 }
 
 func (cv *compatV1) listServiceHistory(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(400, gin.H{"code": 400, "message": "invalid id"})
+		c.JSON(400, V1Response[any]{
+			Success: false,
+			Error:   "invalid id",
+		})
 		return
 	}
 
 	singleton.ServerLock.RLock()
 	server, ok := singleton.ServerList[id]
 	if !ok {
-		c.JSON(404, gin.H{"code": 404, "message": "server not found"})
+		c.JSON(404, V1Response[any]{
+			Success: false,
+			Error:   "server not found",
+		})
 		return
 	}
 
@@ -236,7 +250,10 @@ func (cv *compatV1) listServiceHistory(c *gin.Context) {
 	authorized := isMember || isViewPasswordVerfied
 
 	if server.HideForGuest && !authorized {
-		c.JSON(403, gin.H{"code": 403, "message": "unauthorized"})
+		c.JSON(403, V1Response[any]{
+			Success: false,
+			Error:   "unauthorized",
+		})
 		return
 	}
 	singleton.ServerLock.RUnlock()
@@ -244,7 +261,10 @@ func (cv *compatV1) listServiceHistory(c *gin.Context) {
 	query := map[string]any{"server_id": id}
 	monitorHistories := singleton.MonitorAPI.GetMonitorHistories(query)
 	if monitorHistories.Code != 0 {
-		c.JSON(500, gin.H{"code": 500, "message": monitorHistories.Message})
+		c.JSON(500, V1Response[any]{
+			Success: false,
+			Error:   monitorHistories.Message,
+		})
 		return
 	}
 
@@ -260,7 +280,10 @@ func (cv *compatV1) listServiceHistory(c *gin.Context) {
 		})
 	}
 
-	c.JSON(200, ret)
+	c.JSON(200, V1Response[[]*model.V1ServiceInfos]{
+		Success: true,
+		Data:    ret,
+	})
 }
 
 func (cv *compatV1) listServerWithServices(c *gin.Context) {
@@ -269,7 +292,10 @@ func (cv *compatV1) listServerWithServices(c *gin.Context) {
 		Select("distinct(server_id)").
 		Where("server_id != 0").
 		Find(&serverIdsWithService).Error; err != nil {
-		c.JSON(500, gin.H{"code": 500, "message": err.Error()})
+		c.JSON(500, V1Response[any]{
+			Success: false,
+			Error:   err.Error(),
+		})
 		return
 	}
 
@@ -283,7 +309,10 @@ func (cv *compatV1) listServerWithServices(c *gin.Context) {
 		server, ok := singleton.ServerList[id]
 		if !ok {
 			singleton.ServerLock.RUnlock()
-			c.JSON(404, gin.H{"code": 404, "message": "server not found"})
+			c.JSON(404, V1Response[any]{
+				Success: false,
+				Error:   "server not found",
+			})
 			return
 		}
 
@@ -293,7 +322,10 @@ func (cv *compatV1) listServerWithServices(c *gin.Context) {
 		singleton.ServerLock.RUnlock()
 	}
 
-	c.JSON(200, ret)
+	c.JSON(200, V1Response[[]uint64]{
+		Success: true,
+		Data:    ret,
+	})
 }
 
 func (cv *compatV1) listConfig(c *gin.Context) {
@@ -316,5 +348,8 @@ func (cv *compatV1) listConfig(c *gin.Context) {
 		}(),
 	}
 
-	c.JSON(200, conf)
+	c.JSON(200, V1Response[model.V1SettingResponse]{
+		Success: true,
+		Data:    conf,
+	})
 }
