@@ -52,7 +52,7 @@ func (cv *compatV1) serverStream(c *gin.Context) {
 	defer conn.Close()
 	count := 0
 	for {
-		stat, err := cv.getServerStat(c, false)
+		stat, err := cv.getServerStat(c, count == 0)
 		if err != nil {
 			continue
 		}

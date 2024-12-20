@@ -81,10 +81,6 @@ func routers(r *gin.Engine) {
 		ma := &memberAPI{api}
 		ma.serve()
 	}
-	{
-		cv := &compatV1{r: api.Group("v1")}
-		cv.serve()
-	}
 }
 
 func loadThirdPartyTemplates(tmpl *template.Template) *template.Template {

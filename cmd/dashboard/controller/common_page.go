@@ -48,6 +48,14 @@ func (cp *commonPage) serve() {
 	cr.POST("/terminal", cp.createTerminal)
 	cr.GET("/file", cp.createFM)
 	cr.GET("/file/:id", cp.fm)
+	cr.GET("/dashboard", func(c *gin.Context) {
+		c.Redirect(302, "/server")
+	})
+
+	{
+		cv := &compatV1{r: cr.Group("api/v1")}
+		cv.serve()
+	}
 }
 
 type viewPasswordForm struct {
