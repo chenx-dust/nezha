@@ -120,3 +120,14 @@ type V1SettingResponse struct {
 
 	Version string `json:"version,omitempty"`
 }
+
+type V1User struct {
+	V1Common
+	Username string `json:"username,omitempty" gorm:"uniqueIndex"`
+	Password string `json:"password,omitempty" gorm:"type:char(72)"`
+}
+
+type V1Profile struct {
+	V1User
+	LoginIP string `json:"login_ip,omitempty"`
+}

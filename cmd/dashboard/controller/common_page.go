@@ -48,9 +48,7 @@ func (cp *commonPage) serve() {
 	cr.POST("/terminal", cp.createTerminal)
 	cr.GET("/file", cp.createFM)
 	cr.GET("/file/:id", cp.fm)
-	cr.GET("/dashboard", func(c *gin.Context) {
-		c.Redirect(302, "/server")
-	})
+	cr.GET("/dashboard", cp.v1Dashboard)
 
 	{
 		cv := &compatV1{r: cr.Group("api/v1")}
@@ -60,6 +58,15 @@ func (cp *commonPage) serve() {
 
 type viewPasswordForm struct {
 	Password string
+}
+
+func (p *commonPage) v1Dashboard(c *gin.Context) {
+	_, isMember := c.Get(model.CtxKeyAuthorizedUser)
+	if !isMember {
+		c.Redirect(302, "/login")
+	} else {
+		c.Redirect(302, "/server")
+	}
 }
 
 func (p *commonPage) issueViewPassword(c *gin.Context) {

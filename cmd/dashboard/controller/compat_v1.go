@@ -37,6 +37,7 @@ func (cv *compatV1) serve() {
 	r.GET("/service/server", cv.listServerWithServices)
 
 	r.GET("/setting", cv.listConfig)
+	r.GET("/profile", cv.getProfile)
 }
 
 func (cv *compatV1) serverStream(c *gin.Context) {
@@ -351,5 +352,31 @@ func (cv *compatV1) listConfig(c *gin.Context) {
 	c.JSON(200, V1Response[model.V1SettingResponse]{
 		Success: true,
 		Data:    conf,
+	})
+}
+
+func (cv *compatV1) getProfile(c *gin.Context) {
+	auth, ok := c.Get(model.CtxKeyAuthorizedUser)
+	if !ok {
+		c.JSON(401, V1Response[any]{
+			Success: false,
+			Error:   "unauthorized",
+		})
+		return
+	}
+	user := auth.(*model.User)
+	profile := model.V1Profile{
+		V1User: model.V1User{
+			V1Common: model.V1Common{
+				ID:        user.ID,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+			},
+			Username: user.Login,
+		},
+	}
+	c.JSON(200, V1Response[model.V1Profile]{
+		Success: true,
+		Data:    profile,
 	})
 }
