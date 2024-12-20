@@ -44,11 +44,6 @@ func (v *apiV1) serve() {
 		AbortWhenFail: true,
 	}))
 	mr.GET("/:id", v.monitorHistoriesById)
-
-	{
-		compatV1 := &compatV1{r: mr}
-		compatV1.serve()
-	}
 }
 
 // serverList 获取服务器列表 不传入Query参数则获取全部
