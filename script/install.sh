@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.0"
+NZ_VERSION="v0.20.3-compat.1"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -122,7 +122,7 @@ installation_check() {
 
 select_version() {
     if [ -z "$IS_DOCKER_NEZHA" ]; then
-        info "请自行选择您的安装方式（如果你是安装Agent，输入哪个都是一样的）："
+        info "请自行选择您的安装方式（本脚本仅支持管理面板端）："
         info "1. Docker"
         info "2. 独立安装"
         while true; do
@@ -669,7 +669,7 @@ show_usage() {
 show_menu() {
     printf "
     ${green}哪吒监控面板 V1 兼容版管理脚本${plain} ${red}${NZ_VERSION}${plain}
-    ${yellow} !!! 本脚本仅支持管理哪吒监控面板 V1 兼容版 (非官方) !!! ${plain}
+    ${yellow}!!! 本脚本仅支持管理哪吒面板 V1 兼容版 (非官方) !!! ${plain}
     --- https://github.com/chenx-dust/nezha-compat ---
     ${green}1.${plain}  安装面板端
     ${green}2.${plain}  修改面板配置
