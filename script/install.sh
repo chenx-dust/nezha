@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.3"
+NZ_VERSION="v0.20.3-compat.4"
 
 red='\033[0;31m'
 green='\033[0;32m'
