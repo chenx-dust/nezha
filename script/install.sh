@@ -553,7 +553,7 @@ uninstall_dashboard() {
 uninstall_dashboard_docker() {
     sudo $DOCKER_COMPOSE_COMMAND -f ${NZ_DASHBOARD_PATH}/docker-compose.yaml down
     sudo rm -rf $NZ_DASHBOARD_PATH
-    sudo docker rmi -f ghcr.io/chenx-dust/nezha-compat-dashboard >/dev/null 2>&1
+    sudo docker rmi -f ghcr.io/chenx-dust/nezha-dashboard >/dev/null 2>&1
     sudo docker rmi -f registry.cn-shanghai.aliyuncs.com/naibahq/nezha-dashboard >/dev/null 2>&1
 }
 
