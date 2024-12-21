@@ -590,16 +590,25 @@ clean_all() {
 }
 
 install_nezha_dash() {
-    _version=$(curl -m 10 -sL "https://api.github.com/repos/hamster1963/nezha-dash-v1/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+    install_custom_theme "hamster1963/nezha-dash-v1"
+}
+
+install_nazhua() {
+    install_custom_theme "hi2shark/nazhua"
+}
+
+install_custom_theme() {
+    _repo=$1
+    _version=$(curl -m 10 -sL "https://api.github.com/repos/${_repo}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 
     if [ -z "$_version" ]; then
-        err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/hamster1963/nezha-dash-v1/releases/latest"
+        err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${_repo}/releases/latest"
         return 1
     else
-        echo "nezha-dash-v1 最新版本为: ${_version}"
+        echo "${_repo} 最新版本为: ${_version}"
     fi
 
-    NZ_DASH_URL="https://github.com/hamster1963/nezha-dash-v1/releases/download/${_version}/dist.zip"
+    NZ_DASH_URL="https://github.com/${_repo}/releases/download/${_version}/dist.zip"
 
     TMP_DIR=$(mktemp -d)
     wget -qO ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
@@ -617,8 +626,8 @@ install_nezha_dash() {
     fi
     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
 
+    echo "替换静态文件..."
     ASSETS_FILES=$(find ${TMP_DIR}/dist/ -type f)
-
     for filename in ${ASSETS_FILES}; do
         NOW_FILE=$(echo $filename | sed "s|^\\${TMP_DIR}/dist/|/|")
         echo "replacing $NOW_FILE to /static${NOW_FILE}"
@@ -641,8 +650,11 @@ EOF
     sudo rm -rf ${TMP_DIR}
 
     echo
-    success "nezha-dash-v1 主题安装成功"
+    success "${_repo} 主题安装成功"
     info "为了更好的体验，建议打开设置中的 使用界面主题处理无路由情况"
+    if [ $# = 0 ]; then
+        before_show_menu
+    fi
 }
 
 show_usage() {
@@ -657,11 +669,8 @@ show_usage() {
     echo "./nezha.sh show_dashboard_log         - 查看面板日志"
     echo "./nezha.sh uninstall_dashboard        - 卸载管理面板"
     echo "--------------------------------------------------------"
-    echo "./nezha.sh install_agent              - 安装监控Agent"
-    echo "./nezha.sh modify_agent_config        - 修改Agent配置"
-    echo "./nezha.sh show_agent_log             - 查看Agent日志"
-    echo "./nezha.sh uninstall_agent            - 卸载Agen"
-    echo "./nezha.sh restart_agent              - 重启Agen"
+    echo "./nezha.sh install_nezha_dash         - 安装 nezha-dash 主题"
+    echo "./nezha.sh install_nazhua             - 安装 nazhua 主题"
     echo "./nezha.sh update_script              - 更新脚本"
     echo "--------------------------------------------------------"
 }
@@ -680,12 +689,13 @@ show_menu() {
     ${green}7.${plain}  卸载管理面板
     ———————————————————
     ${green}8.${plain}  安装 nezha-dash 主题
+    ${green}9.${plain}  安装 nazhua 主题
     ———————————————————
-    ${green}9.${plain}  更新脚本
+    ${green}10.${plain}  更新脚本
     ———————————————————
     ${green}0.${plain}  退出脚本
     "
-    echo && printf "请输入选择 [0-9]: " && read -r num
+    echo && printf "请输入选择 [0-10]: " && read -r num
     case "${num}" in
         0)
             exit 0
@@ -715,10 +725,13 @@ show_menu() {
             install_nezha_dash
             ;;
         9)
+            install_nazhua
+            ;;
+        10)
             update_script
             ;;
         *)
-            err "请输入正确的数字 [0-9]"
+            err "请输入正确的数字 [0-10]"
             ;;
     esac
 }
@@ -754,6 +767,9 @@ if [ $# -gt 0 ]; then
             ;;
         "install_nezha_dash")
             install_nezha_dash 0
+            ;;
+        "install_nazhua")
+            install_nazhua 0
             ;;
         *) show_usage ;;
     esac
