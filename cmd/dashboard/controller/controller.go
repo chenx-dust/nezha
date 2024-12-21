@@ -54,7 +54,9 @@ func ServeWeb(port uint) *http.Server {
 			Btn:   "返回首页",
 		}, true)
 	}
-	r.NoRoute(page404)
+	if !singleton.Conf.UseTemplateHandleNoRoute {
+		r.NoRoute(page404)
+	}
 	r.NoMethod(page404)
 
 	srv := &http.Server{

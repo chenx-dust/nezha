@@ -40,6 +40,9 @@ func (cp *commonPage) serve() {
 		AbortWhenFail: true,
 	}))
 	cr.GET("/", cp.home)
+	if singleton.Conf.UseTemplateHandleNoRoute {
+		cp.r.NoRoute(cp.home)
+	}
 	cr.GET("/service", cp.service)
 	// TODO: 界面直接跳转使用该接口
 	cr.GET("/network/:id", cp.network)

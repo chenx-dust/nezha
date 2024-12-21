@@ -88,6 +88,7 @@ type Config struct {
 
 	EnablePlainIPInNotification     bool // 通知信息IP不打码
 	DisableSwitchTemplateInFrontend bool // 前台禁用切换模板功能
+	UseTemplateHandleNoRoute        bool // 用模板处理无路由情况
 
 	// IP变更提醒
 	EnableIPChangeNotification bool
