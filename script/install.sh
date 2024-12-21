@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.2"
+NZ_VERSION="v0.20.3-compat.3"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -596,7 +596,7 @@ install_nezha_dash() {
         err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/hamster1963/nezha-dash-v1/releases/latest"
         return 1
     else
-        echo "Nezha Dash V1 最新版本为: ${_version}"
+        echo "nezha-dash-v1 最新版本为: ${_version}"
     fi
 
     NZ_DASH_URL="https://github.com/hamster1963/nezha-dash-v1/releases/download/${_version}/dist.zip"
@@ -604,15 +604,10 @@ install_nezha_dash() {
     TMP_DIR=$(mktemp -d)
     wget -qO ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
     unzip -qq -o ${TMP_DIR}/dist.zip -d ${TMP_DIR}
+    # fix viewpassword.html
+    wget -qO ${TMP_DIR}/viewpassord.html https://${GITHUB_RAW_URL}/resource/template/theme-default/viewpassword.html
+    sed -i "s|theme-default|theme-custom|g" ${TMP_DIR}/viewpassord.html
 
-    # 清理原来的主题文件
-    # if [ ! -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ ! -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
-    #     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
-    # else
-    #     echo "清理原来的主题文件..."
-    #     sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom"
-    #     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
-    # fi
     echo "清理原来的主题文件..."
     if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ]; then
         sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/template/theme-custom"
@@ -638,11 +633,16 @@ install_nezha_dash() {
 $(cat ${TMP_DIR}/dist/index.html)
 {{end}}
 EOF
+    sudo cp ${TMP_DIR}/viewpassord.html ${NZ_DASHBOARD_PATH}/resource/template/theme-custom/viewpassword.html
     sudo cp -rf ${TMP_DIR}/dist/* ${NZ_DASHBOARD_PATH}/resource/static/custom/
 
     echo "清理临时文件..."
     sudo rm ${NZ_DASHBOARD_PATH}/resource/static/custom/index.html
     sudo rm -rf ${TMP_DIR}
+
+    echo
+    success "nezha-dash-v1 主题安装成功"
+    info "为了更好的体验，建议打开设置中的 使用界面主题处理无路由情况"
 }
 
 show_usage() {
@@ -679,7 +679,7 @@ show_menu() {
     ${green}6.${plain}  查看面板日志
     ${green}7.${plain}  卸载管理面板
     ———————————————————
-    ${green}8.${plain}  安装 V1 主题
+    ${green}8.${plain}  安装 nezha-dash 主题
     ———————————————————
     ${green}9.${plain}  更新脚本
     ———————————————————
