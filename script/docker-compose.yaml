@@ -1,5 +1,3 @@
-version: "3.3"
-
 services:
   dashboard:
     image: nz_image_url
