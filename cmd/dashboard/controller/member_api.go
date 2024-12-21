@@ -1088,6 +1088,9 @@ func (ma *memberAPI) updateSetting(c *gin.Context) {
 	if singleton.Conf.IPChangeNotificationTag == "" {
 		singleton.Conf.IPChangeNotificationTag = "default"
 	}
+
+	updateNoRoute()
+
 	if err := singleton.Conf.Save(); err != nil {
 		c.JSON(http.StatusOK, model.Response{
 			Code:    http.StatusBadRequest,

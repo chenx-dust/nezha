@@ -151,5 +151,8 @@
     {{ if .Conf.DisableSwitchTemplateInFrontend }}
     $('.checkbox.disable-switch-template').checkbox('set checked')
     {{ end }}
+    {{ if .Conf.UseTemplateHandleNoRoute }}
+    $('.checkbox.template-handle-no-route').checkbox('set checked')
+    {{ end }}
 </script>
 {{end}}
