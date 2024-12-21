@@ -8,14 +8,14 @@
 #========================================================
 
 # 兼容面板安装脚本
-# 仅支持管理哪吒监控面板 V1 兼容版 (非官方)
+# 仅支持管理哪吒面板 V1 兼容版 (非官方)
 # Github: https://github.com/chenx-dust/nezha-compat
 
 NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.1"
+NZ_VERSION="v0.20.3-compat.2"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -678,11 +678,11 @@ show_menu() {
     ${green}5.${plain}  重启并更新面板
     ${green}6.${plain}  查看面板日志
     ${green}7.${plain}  卸载管理面板
-    ————————————————-
-    ${green}8.${plain}  安装 nezha-dash-v1 主题
-    ————————————————-
+    ———————————————————
+    ${green}8.${plain}  安装 V1 主题
+    ———————————————————
     ${green}9.${plain}  更新脚本
-    ————————————————-
+    ———————————————————
     ${green}0.${plain}  退出脚本
     "
     echo && printf "请输入选择 [0-9]: " && read -r num

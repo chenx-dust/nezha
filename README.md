@@ -19,7 +19,7 @@ Just like original Nezha Monitoring, to install or upgrade from original version
 和原版类似，要安装或者从原版中升级到兼容版：
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/chenx-dust/nezha-compat/compat/script/install.sh)
+curl -L https://raw.githubusercontent.com/chenx-dust/nezha-compat/compat/script/install.sh -o nezha.sh && chmod +x nezha.sh && sudo ./nezha.sh
 ```
 
 Then follow the prompt. *English version temporarily not provided.*
