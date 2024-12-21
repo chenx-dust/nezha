@@ -269,12 +269,17 @@ func (cv *compatV1) listServiceHistory(c *gin.Context) {
 		return
 	}
 
+	monitorIDMap := make(map[uint64]*model.Monitor)
+	for _, monitor := range singleton.ServiceSentinelShared.Monitors() {
+		monitorIDMap[monitor.ID] = monitor
+	}
+
 	ret := make([]*model.V1ServiceInfos, 0, len(monitorHistories.Result))
 	for _, history := range monitorHistories.Result {
 		ret = append(ret, &model.V1ServiceInfos{
 			ServiceID:   history.MonitorID,
 			ServerID:    history.ServerID,
-			ServiceName: singleton.ServiceSentinelShared.Monitors()[history.MonitorID].Name,
+			ServiceName: monitorIDMap[history.MonitorID].Name,
 			ServerName:  singleton.ServerList[history.ServerID].Name,
 			CreatedAt:   history.CreatedAt,
 			AvgDelay:    history.AvgDelay,
