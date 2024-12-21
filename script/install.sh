@@ -421,12 +421,6 @@ restart_and_update_docker() {
 
 restart_and_update_standalone() {
     _version=$(curl -m 10 -sL "https://api.github.com/repos/chenx-dust/nezha-compat/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    if [ -z "$_version" ]; then
-        _version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/chenx-dust/nezha-compat/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/naiba\/nezha@/v/g')
-    fi
-    if [ -z "$_version" ]; then
-        _version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/chenx-dust/nezha-compat/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/naiba\/nezha@/v/g')
-    fi
 
     if [ -z "$_version" ]; then
         err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/chenx-dust/nezha-compat/releases/latest"
@@ -595,6 +589,62 @@ clean_all() {
     fi
 }
 
+install_nezha_dash() {
+    _version=$(curl -m 10 -sL "https://api.github.com/repos/hamster1963/nezha-dash-v1/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+
+    if [ -z "$_version" ]; then
+        err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/hamster1963/nezha-dash-v1/releases/latest"
+        return 1
+    else
+        echo "Nezha Dash V1 最新版本为: ${_version}"
+    fi
+
+    NZ_DASH_URL="https://github.com/hamster1963/nezha-dash-v1/releases/download/${_version}/dist.zip"
+
+    TMP_DIR=$(mktemp -d)
+    wget -qO ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
+    unzip -qq -o ${TMP_DIR}/dist.zip -d ${TMP_DIR}
+
+    # 清理原来的主题文件
+    # if [ ! -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ ! -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
+    #     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
+    # else
+    #     echo "清理原来的主题文件..."
+    #     sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom"
+    #     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
+    # fi
+    echo "清理原来的主题文件..."
+    if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ]; then
+        sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/template/theme-custom"
+    fi
+    if [ -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
+        sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/static/custom"
+    fi
+    sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
+
+    ASSETS_FILES=$(find ${TMP_DIR}/dist/ -type f)
+
+    for filename in ${ASSETS_FILES}; do
+        NOW_FILE=$(echo $filename | sed "s|^\\${TMP_DIR}/dist/|/|")
+        echo "replacing $NOW_FILE to /static${NOW_FILE}"
+        for file in ${ASSETS_FILES}; do
+            sed -i "s|${NOW_FILE}|/static${NOW_FILE}|g" $file
+        done
+    done
+
+    echo "替换模板文件..."
+    sudo cat <<EOF > ${NZ_DASHBOARD_PATH}/resource/template/theme-custom/home.html
+{{define "theme-custom/home"}}
+$(cat ${TMP_DIR}/dist/index.html)
+{{end}}
+EOF
+    sudo cp -rf ${TMP_DIR}/dist/* ${NZ_DASHBOARD_PATH}/resource/static/custom/
+
+    echo "清理临时文件..."
+    sudo rm ${NZ_DASHBOARD_PATH}/resource/static/custom/index.html
+    sudo rm -rf ${TMP_DIR}
+}
+
 show_usage() {
     echo "哪吒监控 管理脚本使用方法: "
     echo "--------------------------------------------------------"
@@ -629,11 +679,13 @@ show_menu() {
     ${green}6.${plain}  查看面板日志
     ${green}7.${plain}  卸载管理面板
     ————————————————-
-    ${green}13.${plain} 更新脚本
+    ${green}8.${plain}  安装 nezha-dash-v1 主题
+    ————————————————-
+    ${green}9.${plain}  更新脚本
     ————————————————-
     ${green}0.${plain}  退出脚本
     "
-    echo && printf "请输入选择 [0-13]: " && read -r num
+    echo && printf "请输入选择 [0-9]: " && read -r num
     case "${num}" in
         0)
             exit 0
@@ -659,11 +711,14 @@ show_menu() {
         7)
             uninstall_dashboard
             ;;
-        13)
+        8)
+            install_nezha_dash
+            ;;
+        9)
             update_script
             ;;
         *)
-            err "请输入正确的数字 [0-13]"
+            err "请输入正确的数字 [0-9]"
             ;;
     esac
 }
@@ -696,6 +751,9 @@ if [ $# -gt 0 ]; then
             ;;
         "update_script")
             update_script 0
+            ;;
+        "install_nezha_dash")
+            install_nezha_dash 0
             ;;
         *) show_usage ;;
     esac
