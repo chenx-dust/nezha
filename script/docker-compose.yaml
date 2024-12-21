@@ -6,9 +6,7 @@ services:
     restart: always
     volumes:
       - ./data:/dashboard/data
-      - ./static-custom/static:/dashboard/resource/static/custom:ro
-      - ./theme-custom/template:/dashboard/resource/template/theme-custom:ro
-      - ./dashboard-custom/template:/dashboard/resource/template/dashboard-custom:ro
+      - ./resource:/dashboard/resource:ro
     ports:
       - nz_site_port:80
       - nz_grpc_port:nz_grpc_port

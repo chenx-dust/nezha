@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.4"
+NZ_VERSION="v0.20.3-compat.5"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -237,8 +237,6 @@ install_dashboard() {
 
     if [ "$IS_DOCKER_NEZHA" = 1 ]; then
         install_dashboard_docker
-    elif [ "$IS_DOCKER_NEZHA" = 0 ]; then
-        install_dashboard_standalone
     fi
 
     modify_dashboard_config 0
@@ -267,12 +265,6 @@ install_dashboard_docker() {
             success "Docker 安装成功"
             installation_check
         fi
-    fi
-}
-
-install_dashboard_standalone() {
-    if [ ! -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ ! -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
-        sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
     fi
 }
 
@@ -312,21 +304,21 @@ modify_dashboard_config() {
     fi
 
     echo "关于 GitHub Oauth2 应用：在 https://github.com/settings/developers 创建，无需审核，Callback 填 http(s)://域名或IP/oauth2/callback"
-        echo "关于 Gitee Oauth2 应用：在 https://gitee.com/oauth/applications 创建，无需审核，Callback 填 http(s)://域名或IP/oauth2/callback"
-        printf "请输入 OAuth2 提供商(github/gitlab/jihulab/gitee，默认 github): "
-        read -r nz_oauth2_type
-        printf "请输入 Oauth2 应用的 Client ID: "
-        read -r nz_github_oauth_client_id
-        printf "请输入 Oauth2 应用的 Client Secret: "
-        read -r nz_github_oauth_client_secret
-        printf "请输入 GitHub/Gitee 登录名作为管理员，多个以逗号隔开: "
-        read -r nz_admin_logins
-        printf "请输入站点标题: "
-        read -r nz_site_title
-        printf "请输入站点访问端口: (默认 8008)"
-        read -r nz_site_port
-        printf "请输入用于 Agent 接入的 RPC 端口: (默认 5555)"
-        read -r nz_grpc_port
+    echo "关于 Gitee Oauth2 应用：在 https://gitee.com/oauth/applications 创建，无需审核，Callback 填 http(s)://域名或IP/oauth2/callback"
+    printf "请输入 OAuth2 提供商(github/gitlab/jihulab/gitee，默认 github): "
+    read -r nz_oauth2_type
+    printf "请输入 Oauth2 应用的 Client ID: "
+    read -r nz_github_oauth_client_id
+    printf "请输入 Oauth2 应用的 Client Secret: "
+    read -r nz_github_oauth_client_secret
+    printf "请输入 GitHub/Gitee 登录名作为管理员，多个以逗号隔开: "
+    read -r nz_admin_logins
+    printf "请输入站点标题: "
+    read -r nz_site_title
+    printf "请输入站点访问端口: (默认 8008)"
+    read -r nz_site_port
+    printf "请输入用于 Agent 接入的 RPC 端口: (默认 5555)"
+    read -r nz_grpc_port
 
     if [ -z "$nz_admin_logins" ] || [ -z "$nz_github_oauth_client_id" ] || [ -z "$nz_github_oauth_client_secret" ] || [ -z "$nz_site_title" ]; then
         err "所有选项都不能为空"
@@ -616,6 +608,25 @@ install_custom_theme() {
     # fix viewpassword.html
     wget -qO ${TMP_DIR}/viewpassord.html https://${GITHUB_RAW_URL}/resource/template/theme-default/viewpassword.html
     sed -i "s|theme-default|theme-custom|g" ${TMP_DIR}/viewpassord.html
+
+    if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
+        echo "您可能已经安装过自定义主题，重复安装会覆盖现有主题，请注意备份。"
+        printf "是否退出安装? [Y/n] "
+        read -r input
+        case $input in
+        [yY][eE][sS] | [yY])
+            echo "退出安装"
+            exit 0
+            ;;
+        [nN][oO] | [nN])
+            echo "继续安装"
+            ;;
+        *)
+            echo "退出安装"
+            exit 0
+            ;;
+        esac
+    fi
 
     echo "清理原来的主题文件..."
     if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ]; then
