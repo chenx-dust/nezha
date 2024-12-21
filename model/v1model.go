@@ -50,6 +50,7 @@ type V1StreamServer struct {
 
 type V1StreamServerData struct {
 	Now     int64            `json:"now,omitempty"`
+	Online  uint64           `json:"online,omitempty"`
 	Servers []V1StreamServer `json:"servers,omitempty"`
 }
 

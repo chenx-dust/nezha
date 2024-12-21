@@ -50,6 +50,8 @@ func (cv *compatV1) serverStream(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
+	singleton.OnlineUsers.Add(1)
+	defer singleton.OnlineUsers.Add(^uint64(0))
 	count := 0
 	for {
 		stat, err := cv.getServerStat(c, count == 0)
@@ -136,6 +138,7 @@ func (cv *compatV1) getServerStat(c *gin.Context, withPublicNote bool) ([]byte, 
 
 		return utils.Json.Marshal(model.V1StreamServerData{
 			Now:     time.Now().Unix() * 1000,
+			Online:  singleton.OnlineUsers.Load(),
 			Servers: servers,
 		})
 	})
