@@ -85,6 +85,7 @@ jobs:
         with:
           artifacts: "assets/*/*/*.zip"
           generateReleaseNotes: true
+          makeLatest: true
 
       - name: Purge jsdelivr cache
         run: |
