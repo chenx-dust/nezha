@@ -300,6 +300,8 @@ func (cp *commonPage) ws(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
+	singleton.OnlineUsers.Add(1)
+	defer singleton.OnlineUsers.Add(^uint64(0))
 	count := 0
 	for {
 		stat, err := cp.getServerStat(c, false)
