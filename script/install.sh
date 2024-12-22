@@ -625,6 +625,18 @@ ${yellow}涉及静态文件地址替换，不保证替换后主题完全可用
 }
 
 install_custom_theme_impl() {
+    if [ "$IS_DOCKER_NEZHA" = 1 ]; then
+        install_custom_theme_docker
+    elif [ "$IS_DOCKER_NEZHA" = 0 ]; then
+        install_custom_theme_standalone
+    fi
+}
+
+install_custom_theme_docker() {
+    sudo $DOCKER_COMPOSE_COMMAND -f ${NZ_DASHBOARD_PATH}/docker-compose.yaml exec -it dashboard /install-theme.sh ${CUSTOM_THEME}
+}
+
+install_custom_theme_standalone() {
     _repo=${CUSTOM_THEME}
     _version=$(curl -m 10 -sL "https://api.github.com/repos/${_repo}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 
