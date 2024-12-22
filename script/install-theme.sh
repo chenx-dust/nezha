@@ -9,7 +9,7 @@ GITHUB_RAW_URL="raw.githubusercontent.com/chenx-dust/nezha-compat/compat"
 NZ_DASHBOARD_PATH="/dashboard"
 
 _repo=$1
-_version=$(wget -qO- --timeout=10 "https://api.github.com/repos/${_repo}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+_version=$(wget -qO- --timeout=10 "https://api.github.com/repos/${_repo}/releases/latest" 2>/dev/null | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 
 if [ -z "$_version" ]; then
     echo "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${_repo}/releases/latest"
@@ -22,14 +22,14 @@ NZ_DASH_URL="https://github.com/${_repo}/releases/download/${_version}/dist.zip"
 
 TMP_DIR=$(mktemp -d)
 echo "下载主题文件..."
-wget -O ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
+wget -qO ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
 unzip -qq -o ${TMP_DIR}/dist.zip -d ${TMP_DIR}
 if [ $? -ne 0 ]; then
     echo "解压主题文件失败，请检查仓库地址是否正确"
     exit 1
 fi
 # fix viewpassword.html
-wget -qO ${TMP_DIR}/viewpassord.html https://${GITHUB_RAW_URL}/resource/template/theme-default/viewpassword.html
+wget -qO ${TMP_DIR}/viewpassord.html https://${GITHUB_RAW_URL}/resource/template/theme-default/viewpassword.html >/dev/null 2>&1
 sed -i "s|theme-default|theme-custom|g" ${TMP_DIR}/viewpassord.html
 
 if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
