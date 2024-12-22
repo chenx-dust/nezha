@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.5"
+NZ_VERSION="v0.20.3-compat.6"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -581,16 +581,51 @@ clean_all() {
     fi
 }
 
-install_nezha_dash() {
-    install_custom_theme "hamster1963/nezha-dash-v1"
-}
-
-install_nazhua() {
-    install_custom_theme "hi2shark/nazhua"
-}
-
 install_custom_theme() {
-    _repo=$1
+    if [ $# -lt 1 ]; then
+        printf "
+${green}自定义主题安装${plain}
+${yellow}涉及静态文件地址替换，不保证替换后主题完全可用
+———————————————————
+1. 安装 hamster1963/nezha-dash-v1 主题
+2. 安装 hi2shark/nazhua 主题
+3. 安装 自定义 主题
+0. 返回主菜单${plain}
+"
+        echo && printf "请输入选择 [0-3]: " && read -r num
+        case "${num}" in
+            1)
+                CUSTOM_THEME="hamster1963/nezha-dash-v1"
+                install_custom_theme_impl
+                ;;
+            2)
+                CUSTOM_THEME="hi2shark/nazhua"
+                install_custom_theme_impl
+                ;;
+            3)
+                printf "请输入自定义主题的 GitHub 仓库地址（格式：用户名/仓库名）："
+                read -r CUSTOM_THEME
+                install_custom_theme_impl
+                ;;
+            0)
+                show_menu
+                ;;
+            *)
+                err "请输入正确的数字 [0-3]"
+                ;;
+        esac
+    else
+        CUSTOM_THEME=$1
+        install_custom_theme_impl
+    fi
+
+    if [ $# = 0 ]; then
+        before_show_menu
+    fi
+}
+
+install_custom_theme_impl() {
+    _repo=${CUSTOM_THEME}
     _version=$(curl -m 10 -sL "https://api.github.com/repos/${_repo}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
 
     if [ -z "$_version" ]; then
@@ -603,32 +638,35 @@ install_custom_theme() {
     NZ_DASH_URL="https://github.com/${_repo}/releases/download/${_version}/dist.zip"
 
     TMP_DIR=$(mktemp -d)
-    wget -qO ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
+    info "下载主题文件..."
+    wget -O ${TMP_DIR}/dist.zip "${NZ_DASH_URL}" >/dev/null 2>&1
     unzip -qq -o ${TMP_DIR}/dist.zip -d ${TMP_DIR}
+    if [ $? -ne 0 ]; then
+        err "解压主题文件失败，请检查仓库地址是否正确"
+        return 1
+    fi
     # fix viewpassword.html
     wget -qO ${TMP_DIR}/viewpassord.html https://${GITHUB_RAW_URL}/resource/template/theme-default/viewpassword.html
     sed -i "s|theme-default|theme-custom|g" ${TMP_DIR}/viewpassord.html
 
     if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ] || [ -d "${NZ_DASHBOARD_PATH}/resource/static/custom" ]; then
         echo "您可能已经安装过自定义主题，重复安装会覆盖现有主题，请注意备份。"
-        printf "是否退出安装? [Y/n] "
+        printf "是否继续? [Y/n] "
         read -r input
         case $input in
         [yY][eE][sS] | [yY])
-            echo "退出安装"
-            exit 0
             ;;
         [nN][oO] | [nN])
-            echo "继续安装"
-            ;;
-        *)
             echo "退出安装"
             exit 0
+            ;;
+        *)
+            echo "继续安装"
             ;;
         esac
     fi
 
-    echo "清理原来的主题文件..."
+    info "清理原来的主题文件..."
     if [ -d "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" ]; then
         sudo rm -rf "${NZ_DASHBOARD_PATH}/resource/template/theme-custom"
     fi
@@ -637,17 +675,17 @@ install_custom_theme() {
     fi
     sudo mkdir -p "${NZ_DASHBOARD_PATH}/resource/template/theme-custom" "${NZ_DASHBOARD_PATH}/resource/static/custom" >/dev/null 2>&1
 
-    echo "替换静态文件..."
+    info "替换静态文件..."
     ASSETS_FILES=$(find ${TMP_DIR}/dist/ -type f)
     for filename in ${ASSETS_FILES}; do
         NOW_FILE=$(echo $filename | sed "s|^\\${TMP_DIR}/dist/|/|")
-        echo "replacing $NOW_FILE to /static${NOW_FILE}"
+        echo "replacing \"${NOW_FILE}\" to \"/static${NOW_FILE}\" ..."
         for file in ${ASSETS_FILES}; do
             sed -i "s|${NOW_FILE}|/static${NOW_FILE}|g" $file
         done
     done
 
-    echo "替换模板文件..."
+    info "安装模板文件..."
     sudo cat <<EOF > ${NZ_DASHBOARD_PATH}/resource/template/theme-custom/home.html
 {{define "theme-custom/home"}}
 $(cat ${TMP_DIR}/dist/index.html)
@@ -656,16 +694,13 @@ EOF
     sudo cp ${TMP_DIR}/viewpassord.html ${NZ_DASHBOARD_PATH}/resource/template/theme-custom/viewpassword.html
     sudo cp -rf ${TMP_DIR}/dist/* ${NZ_DASHBOARD_PATH}/resource/static/custom/
 
-    echo "清理临时文件..."
+    info "清理临时文件..."
     sudo rm ${NZ_DASHBOARD_PATH}/resource/static/custom/index.html
     sudo rm -rf ${TMP_DIR}
 
     echo
     success "${_repo} 主题安装成功"
     info "为了更好的体验，建议打开设置中的 使用界面主题处理无路由情况"
-    if [ $# = 0 ]; then
-        before_show_menu
-    fi
 }
 
 show_usage() {
@@ -699,14 +734,13 @@ show_menu() {
     ${green}6.${plain}  查看面板日志
     ${green}7.${plain}  卸载管理面板
     ———————————————————
-    ${green}8.${plain}  安装 nezha-dash 主题
-    ${green}9.${plain}  安装 nazhua 主题
+    ${green}8.${plain}  安装自定义主题
     ———————————————————
-    ${green}10.${plain}  更新脚本
+    ${green}9.${plain}  更新脚本
     ———————————————————
     ${green}0.${plain}  退出脚本
     "
-    echo && printf "请输入选择 [0-10]: " && read -r num
+    echo && printf "请输入选择 [0-9]: " && read -r num
     case "${num}" in
         0)
             exit 0
@@ -733,12 +767,9 @@ show_menu() {
             uninstall_dashboard
             ;;
         8)
-            install_nezha_dash
+            install_custom_theme
             ;;
         9)
-            install_nazhua
-            ;;
-        10)
             update_script
             ;;
         *)
@@ -776,11 +807,9 @@ if [ $# -gt 0 ]; then
         "update_script")
             update_script 0
             ;;
-        "install_nezha_dash")
-            install_nezha_dash 0
-            ;;
-        "install_nazhua")
-            install_nazhua 0
+        "install_custom_theme")
+            shift
+            install_custom_theme "$@"
             ;;
         *) show_usage ;;
     esac

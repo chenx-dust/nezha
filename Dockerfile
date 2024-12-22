@@ -8,7 +8,9 @@ ARG TARGETARCH
 
 COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 COPY ./script/entrypoint.sh /entrypoint.sh
+COPY ./script/install-theme.sh /install-theme.sh
 RUN chmod +x /entrypoint.sh
+RUN chmod +x /install-theme.sh
 
 WORKDIR /dashboard
 COPY dist/dashboard-${TARGETOS}-${TARGETARCH} ./app
