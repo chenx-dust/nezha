@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <theme-repo>"
+    echo "Usage: $0 <theme-repo> [theme-version]"
     exit 1
 fi
 
@@ -9,14 +9,16 @@ GITHUB_RAW_URL="raw.githubusercontent.com/chenx-dust/nezha-compat/compat"
 NZ_DASHBOARD_PATH="/dashboard"
 
 _repo=$1
-_version=$(wget -qO- --timeout=10 "https://api.github.com/repos/${_repo}/releases/latest" 2>/dev/null | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-
-if [ -z "$_version" ]; then
-    echo "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${_repo}/releases/latest"
-    exit 1
+if [ $# -eq 2 ]; then
+    _version=$2
 else
-    echo "${_repo} 最新版本为: ${_version}"
+    _version=$(wget -qO- --timeout=10 "https://api.github.com/repos/${_repo}/releases/latest" 2>/dev/null | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+    if [ -z "$_version" ]; then
+        echo "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${_repo}/releases/latest"
+        exit 1
+    fi
 fi
+echo "${_repo} 即将安装的版本为: ${_version}"
 
 NZ_DASH_URL="https://github.com/${_repo}/releases/download/${_version}/dist.zip"
 

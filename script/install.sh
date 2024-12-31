@@ -15,7 +15,7 @@ NZ_BASE_PATH="/opt/nezha"
 NZ_DASHBOARD_PATH="${NZ_BASE_PATH}/dashboard"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
-NZ_VERSION="v0.20.3-compat.6"
+NZ_VERSION="v0.20.3-compat.7"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -596,15 +596,18 @@ ${yellow}涉及静态文件地址替换，不保证替换后主题完全可用
         case "${num}" in
             1)
                 CUSTOM_THEME="hamster1963/nezha-dash-v1"
+                ask_theme_version
                 install_custom_theme_impl
                 ;;
             2)
                 CUSTOM_THEME="hi2shark/nazhua"
+                ask_theme_version
                 install_custom_theme_impl
                 ;;
             3)
                 printf "请输入自定义主题的 GitHub 仓库地址（格式：用户名/仓库名）："
                 read -r CUSTOM_THEME
+                ask_theme_version
                 install_custom_theme_impl
                 ;;
             0)
@@ -616,12 +619,36 @@ ${yellow}涉及静态文件地址替换，不保证替换后主题完全可用
         esac
     else
         CUSTOM_THEME=$1
+        if [ $# -eq 2 ]; then
+            THEME_VERSION=$2
+        else
+            fetch_theme_version
+        fi
         install_custom_theme_impl
     fi
 
     if [ $# = 0 ]; then
         before_show_menu
     fi
+}
+
+ask_theme_version() {
+    printf "请输入自定义主题的版本号（留空自动获取）："
+    read -r THEME_VERSION
+    if [ -z "${THEME_VERSION}" ]; then
+        fetch_theme_version
+    fi
+}
+
+fetch_theme_version() {
+    if [ -z "${THEME_VERSION}" ]; then
+        THEME_VERSION=$(curl -m 10 -sL "https://api.github.com/repos/${CUSTOM_THEME}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+        if [ -z "${THEME_VERSION}" ]; then
+            err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${CUSTOM_THEME}/releases/latest"
+            return 1
+        fi
+    fi
+    echo "${CUSTOM_THEME} 即将安装的版本为: ${THEME_VERSION}"
 }
 
 install_custom_theme_impl() {
@@ -633,19 +660,12 @@ install_custom_theme_impl() {
 }
 
 install_custom_theme_docker() {
-    sudo $DOCKER_COMPOSE_COMMAND -f ${NZ_DASHBOARD_PATH}/docker-compose.yaml exec -it dashboard /install-theme.sh ${CUSTOM_THEME}
+    sudo $DOCKER_COMPOSE_COMMAND -f ${NZ_DASHBOARD_PATH}/docker-compose.yaml exec -it dashboard /install-theme.sh ${CUSTOM_THEME} ${THEME_VERSION}
 }
 
 install_custom_theme_standalone() {
     _repo=${CUSTOM_THEME}
-    _version=$(curl -m 10 -sL "https://api.github.com/repos/${_repo}/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-
-    if [ -z "$_version" ]; then
-        err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/${_repo}/releases/latest"
-        return 1
-    else
-        echo "${_repo} 最新版本为: ${_version}"
-    fi
+    _version=${THEME_VERSION}
 
     NZ_DASH_URL="https://github.com/${_repo}/releases/download/${_version}/dist.zip"
 
