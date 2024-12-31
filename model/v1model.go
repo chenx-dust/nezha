@@ -116,8 +116,8 @@ type V1Config struct {
 	CustomCodeDashboard string `mapstructure:"custom_code_dashboard" json:"custom_code_dashboard,omitempty"`
 }
 
-type V1SettingResponse struct {
-	V1Config
+type V1SettingResponse[T any] struct {
+	Config T `json:"config,omitempty"`
 
 	Version string `json:"version,omitempty"`
 }

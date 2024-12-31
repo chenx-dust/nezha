@@ -342,8 +342,8 @@ func (cv *compatV1) listConfig(c *gin.Context) {
 	_, isViewPasswordVerfied := c.Get(model.CtxKeyViewPasswordVerified)
 	authorized := isMember || isViewPasswordVerfied
 
-	conf := model.V1SettingResponse{
-		V1Config: model.V1Config{
+	conf := model.V1SettingResponse[model.V1Config]{
+		Config: model.V1Config{
 			SiteName:            singleton.Conf.Site.Brand,
 			Language:            strings.Replace(singleton.Conf.Language, "_", "-", -1),
 			CustomCode:          singleton.Conf.Site.CustomCode,
@@ -357,7 +357,7 @@ func (cv *compatV1) listConfig(c *gin.Context) {
 		}(),
 	}
 
-	c.JSON(200, V1Response[model.V1SettingResponse]{
+	c.JSON(200, V1Response[model.V1SettingResponse[model.V1Config]]{
 		Success: true,
 		Data:    conf,
 	})
