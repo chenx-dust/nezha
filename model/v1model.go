@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	pb "github.com/naiba/nezha/proto"
+)
 
 type V1Host struct {
 	Platform        string   `json:"platform,omitempty"`
@@ -60,6 +64,40 @@ type V1Common struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at,omitempty"`
 	// Do not use soft deletion
 	// DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+type V1IP struct {
+	IPv4Addr string `json:"ipv4_addr,omitempty"`
+	IPv6Addr string `json:"ipv6_addr,omitempty"`
+}
+
+type V1GeoIP struct {
+	IP          V1IP   `json:"ip,omitempty"`
+	CountryCode string `json:"country_code,omitempty"`
+}
+
+type V1Server struct {
+	V1Common
+
+	Name            string `json:"name"`
+	UUID            string `json:"uuid,omitempty" gorm:"unique"`
+	Note            string `json:"note,omitempty"`           // 管理员可见备注
+	PublicNote      string `json:"public_note,omitempty"`    // 公开备注
+	DisplayIndex    int    `json:"display_index"`            // 展示排序，越大越靠前
+	HideForGuest    bool   `json:"hide_for_guest,omitempty"` // 对游客隐藏
+	EnableDDNS      bool   `json:"enable_ddns,omitempty"`    // 启用DDNS
+	DDNSProfilesRaw string `gorm:"default:'[]';column:ddns_profiles_raw" json:"-"`
+
+	DDNSProfiles []uint64 `gorm:"-" json:"ddns_profiles,omitempty" validate:"optional"` // DDNS配置
+
+	Host       *V1Host      `gorm:"-" json:"host,omitempty"`
+	State      *V1HostState `gorm:"-" json:"state,omitempty"`
+	GeoIP      *V1GeoIP     `gorm:"-" json:"geoip,omitempty"`
+	LastActive time.Time    `gorm:"-" json:"last_active,omitempty"`
+
+	TaskStream pb.NezhaService_RequestTaskServer `gorm:"-" json:"-"`
+
+	PrevTransferInSnapshot  int64 `gorm:"-" json:"-"` // 上次数据点时的入站使用量
+	PrevTransferOutSnapshot int64 `gorm:"-" json:"-"` // 上次数据点时的出站使用量
 }
 
 type V1ServerGroup struct {

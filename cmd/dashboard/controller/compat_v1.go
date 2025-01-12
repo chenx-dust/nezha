@@ -30,6 +30,7 @@ type V1Response[T any] struct {
 func (cv *compatV1) serve() {
 	r := cv.r.Group("")
 	r.GET("/ws/server", cv.serverStream)
+	r.GET("/server", cv.listServer)
 	r.GET("/server-group", cv.listServerGroup)
 
 	r.GET("/service", cv.showService)
@@ -80,6 +81,79 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 			},
 		})
 	}
+}
+
+func (cv *compatV1) listServer(c *gin.Context) {
+	singleton.SortedServerLock.RLock()
+	defer singleton.SortedServerLock.RUnlock()
+
+	var ssl []*model.V1Server
+	for _, s := range singleton.SortedServerList {
+		ipv4, ipv6, _ := utils.SplitIPAddr(s.Host.IP)
+		ssl = append(ssl, &model.V1Server{
+			V1Common: model.V1Common{
+				ID:        s.ID,
+				CreatedAt: s.CreatedAt,
+				UpdatedAt: s.UpdatedAt,
+			},
+			Name:         s.Name,
+			UUID:         strconv.FormatUint(s.ID, 10),
+			Note:         s.Note,
+			PublicNote:   s.PublicNote,
+			DisplayIndex: s.DisplayIndex,
+			HideForGuest: s.HideForGuest,
+			EnableDDNS:   s.EnableDDNS,
+			DDNSProfiles: s.DDNSProfiles,
+			Host: &model.V1Host{
+				Platform:        s.Host.Platform,
+				PlatformVersion: s.Host.PlatformVersion,
+				CPU:             s.Host.CPU,
+				MemTotal:        s.Host.MemTotal,
+				DiskTotal:       s.Host.DiskTotal,
+				SwapTotal:       s.Host.SwapTotal,
+				Arch:            s.Host.Arch,
+				Virtualization:  s.Host.Virtualization,
+				BootTime:        s.Host.BootTime,
+				Version:         s.Host.Version,
+				GPU:             s.Host.GPU,
+			},
+			State: &model.V1HostState{
+				CPU:            s.State.CPU,
+				MemUsed:        s.State.MemUsed,
+				SwapUsed:       s.State.SwapUsed,
+				DiskUsed:       s.State.DiskUsed,
+				NetInTransfer:  s.State.NetInTransfer,
+				NetOutTransfer: s.State.NetOutTransfer,
+				NetInSpeed:     s.State.NetInSpeed,
+				NetOutSpeed:    s.State.NetOutSpeed,
+				Uptime:         s.State.Uptime,
+				Load1:          s.State.Load1,
+				Load5:          s.State.Load5,
+				Load15:         s.State.Load15,
+				TcpConnCount:   s.State.TcpConnCount,
+				UdpConnCount:   s.State.UdpConnCount,
+				ProcessCount:   s.State.ProcessCount,
+				Temperatures:   s.State.Temperatures,
+				GPU:            []float64{s.State.GPU},
+			},
+			GeoIP: &model.V1GeoIP{
+				IP: model.V1IP{
+					IPv4Addr: ipv4,
+					IPv6Addr: ipv6,
+				},
+				CountryCode: s.Host.CountryCode,
+			},
+			LastActive:              s.LastActive,
+			TaskStream:              s.TaskStream,
+			PrevTransferInSnapshot:  s.PrevTransferInSnapshot,
+			PrevTransferOutSnapshot: s.PrevTransferOutSnapshot,
+		})
+	}
+
+	c.JSON(200, V1Response[[]*model.V1Server]{
+		Success: true,
+		Data:    ssl,
+	})
 }
 
 func (cv *compatV1) serverStream(c *gin.Context) {
