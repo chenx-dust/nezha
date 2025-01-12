@@ -38,6 +38,39 @@ func (cv *compatV1) serve() {
 
 	r.GET("/setting", cv.listConfig)
 	r.GET("/profile", cv.getProfile)
+
+	r.POST("/login", cv.mimicLogin)
+}
+
+func (cv *compatV1) mimicLogin(c *gin.Context) {
+	var lr model.V1LoginRequest
+	if err := c.ShouldBindJSON(&lr); err != nil {
+		c.JSON(400, model.V1LoginResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	apiToken := lr.Username
+	isLogin := false
+	if apiToken != "" {
+		var u model.User
+		singleton.ApiLock.RLock()
+		if _, ok := singleton.ApiTokenList[apiToken]; ok {
+			err := singleton.DB.First(&u).Where("id = ?", singleton.ApiTokenList[apiToken].UserID).Error
+			isLogin = err == nil
+		}
+		singleton.ApiLock.RUnlock()
+		if isLogin {
+			c.Set(model.CtxKeyAuthorizedUser, &u)
+			c.Set("isAPI", true)
+		}
+	}
+
+	c.JSON(200, model.V1LoginResponse{
+		Expire: time.Now().Add(time.Hour * 24 * 365),
+		Token:  apiToken,
+	})
 }
 
 func (cv *compatV1) serverStream(c *gin.Context) {

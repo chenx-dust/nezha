@@ -132,3 +132,14 @@ type V1Profile struct {
 	V1User
 	LoginIP string `json:"login_ip,omitempty"`
 }
+
+type V1LoginRequest struct {
+	Password string `json:"password,omitempty"`
+	Username string `json:"username,omitempty"`
+}
+
+type V1LoginResponse struct {
+	Error  string    `json:"error,omitempty"`
+	Expire time.Time `json:"expire,omitempty"`
+	Token  string    `json:"token,omitempty"`
+}
