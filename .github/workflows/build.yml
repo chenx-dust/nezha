@@ -2,6 +2,7 @@ name: Release
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -43,12 +44,21 @@ jobs:
         with:
           go-version: "1.23.x"
 
-      - name: Build
+      - name: Build release
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
           args: build --single-target --clean --skip=validate
+
+      - name: Build snapshot
+        if: github.event_name != 'push' || !contains(github.ref, 'refs/tags/')
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --single-target --clean --skip=validate --snapshot
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
