@@ -45,7 +45,7 @@ func (cv *compatV1) serve() {
 func (cv *compatV1) mimicLogin(c *gin.Context) {
 	var lr model.V1LoginRequest
 	if err := c.ShouldBindJSON(&lr); err != nil {
-		c.JSON(400, model.V1LoginResponse{
+		c.JSON(400, V1Response[any]{
 			Error: err.Error(),
 		})
 		return
@@ -53,7 +53,7 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 
 	apiToken := lr.Username
 	isLogin := false
-	if apiToken != "" {
+	if apiToken != "" && lr.Password == "" {
 		var u model.User
 		singleton.ApiLock.RLock()
 		if _, ok := singleton.ApiTokenList[apiToken]; ok {
@@ -67,10 +67,19 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 		}
 	}
 
-	c.JSON(200, model.V1LoginResponse{
-		Expire: time.Now().Add(time.Hour * 24 * 365),
-		Token:  apiToken,
-	})
+	if !isLogin {
+		c.JSON(400, V1Response[any]{
+			Error: "ApiErrorUnauthorized",
+		})
+	} else {
+		c.JSON(200, V1Response[model.V1LoginResponse]{
+			Success: true,
+			Data: model.V1LoginResponse{
+				Expire: time.Now().Add(time.Hour * 24 * 365).Format(time.RFC3339),
+				Token:  apiToken,
+			},
+		})
+	}
 }
 
 func (cv *compatV1) serverStream(c *gin.Context) {

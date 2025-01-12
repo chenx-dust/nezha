@@ -139,7 +139,6 @@ type V1LoginRequest struct {
 }
 
 type V1LoginResponse struct {
-	Error  string    `json:"error,omitempty"`
-	Expire time.Time `json:"expire,omitempty"`
-	Token  string    `json:"token,omitempty"`
+	Expire string `json:"expire,omitempty"`
+	Token  string `json:"token,omitempty"`
 }
