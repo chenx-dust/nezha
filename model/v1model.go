@@ -65,6 +65,7 @@ type V1Common struct {
 	// Do not use soft deletion
 	// DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
+
 type V1IP struct {
 	IPv4Addr string `json:"ipv4_addr,omitempty"`
 	IPv6Addr string `json:"ipv6_addr,omitempty"`

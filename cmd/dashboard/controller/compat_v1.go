@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/naiba/nezha/model"
+	"github.com/naiba/nezha/pkg/mygin"
 	"github.com/naiba/nezha/pkg/utils"
 	"github.com/naiba/nezha/service/singleton"
 	"golang.org/x/sync/singleflight"
@@ -30,7 +31,6 @@ type V1Response[T any] struct {
 func (cv *compatV1) serve() {
 	r := cv.r.Group("")
 	r.GET("/ws/server", cv.serverStream)
-	r.GET("/server", cv.listServer)
 	r.GET("/server-group", cv.listServerGroup)
 
 	r.GET("/service", cv.showService)
@@ -41,6 +41,17 @@ func (cv *compatV1) serve() {
 	r.GET("/profile", cv.getProfile)
 
 	r.POST("/login", cv.mimicLogin)
+
+	auth := cv.r.Group("")
+	auth.Use(mygin.Authorize(mygin.AuthorizeOption{
+		MemberOnly: true,
+		AllowAPI:   true,
+		IsPage:     false,
+		Msg:        "访问此接口需要认证",
+		Btn:        "点此登录",
+		Redirect:   "/login",
+	}))
+	auth.GET("/server", cv.listServer)
 }
 
 func (cv *compatV1) mimicLogin(c *gin.Context) {
@@ -54,7 +65,7 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 
 	apiToken := lr.Username
 	isLogin := false
-	if apiToken != "" && lr.Password == "" {
+	if apiToken != "" {
 		var u model.User
 		singleton.ApiLock.RLock()
 		if _, ok := singleton.ApiTokenList[apiToken]; ok {
