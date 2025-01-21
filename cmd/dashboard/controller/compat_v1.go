@@ -245,7 +245,12 @@ func (cv *compatV1) getServerStat(c *gin.Context, withPublicNote bool) ([]byte, 
 					UdpConnCount:   server.State.UdpConnCount,
 					ProcessCount:   server.State.ProcessCount,
 					Temperatures:   server.State.Temperatures,
-					GPU:            []float64{server.State.GPU},
+					GPU: func() []float64 {
+						if len(server.Host.GPU) > 0 {
+							return []float64{server.State.GPU}
+						}
+						return []float64{}
+					}(),
 				},
 				CountryCode: server.Host.CountryCode,
 				LastActive:  server.LastActive,
