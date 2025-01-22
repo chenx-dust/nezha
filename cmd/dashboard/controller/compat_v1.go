@@ -94,6 +94,12 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 	}
 }
 
+func idToUuid(id uint64) string {
+	str := strconv.FormatUint(id, 10)
+	str = strings.Repeat("0", 32-len(str)) + str
+	return str[0:8] + "-" + str[8:12] + "-" + str[12:16] + "-" + str[16:20] + "-" + str[20:]
+}
+
 func (cv *compatV1) listServer(c *gin.Context) {
 	singleton.SortedServerLock.RLock()
 	defer singleton.SortedServerLock.RUnlock()
@@ -108,7 +114,7 @@ func (cv *compatV1) listServer(c *gin.Context) {
 				UpdatedAt: s.UpdatedAt,
 			},
 			Name:         s.Name,
-			UUID:         strconv.FormatUint(s.ID, 10),
+			UUID:         idToUuid(s.ID),
 			Note:         s.Note,
 			PublicNote:   s.PublicNote,
 			DisplayIndex: s.DisplayIndex,
@@ -145,7 +151,12 @@ func (cv *compatV1) listServer(c *gin.Context) {
 				UdpConnCount:   s.State.UdpConnCount,
 				ProcessCount:   s.State.ProcessCount,
 				Temperatures:   s.State.Temperatures,
-				GPU:            []float64{s.State.GPU},
+				GPU: func() []float64 {
+					if len(s.Host.GPU) > 0 {
+						return []float64{s.State.GPU}
+					}
+					return nil
+				}(),
 			},
 			GeoIP: &model.V1GeoIP{
 				IP: model.V1IP{
@@ -260,7 +271,7 @@ func (cv *compatV1) getServerStat(c *gin.Context, withPublicNote bool) ([]byte, 
 						if len(server.Host.GPU) > 0 {
 							return []float64{server.State.GPU}
 						}
-						return []float64{}
+						return nil
 					}(),
 				},
 				CountryCode: server.Host.CountryCode,
