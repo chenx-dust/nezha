@@ -255,11 +255,6 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 	singleton.AlertsLock.RLock()
 	defer singleton.AlertsLock.RUnlock()
 
-	notificationTagToID := make(map[string]uint64)
-	for id, tag := range singleton.NotificationIDToTag {
-		notificationTagToID[tag] = id
-	}
-
 	alerts := make([]*model.V1AlertRule, 0, len(singleton.Alerts))
 	for _, alert := range singleton.Alerts {
 		rules := make([]*model.V1Rule, 0, len(alert.Rules))
@@ -276,6 +271,14 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 				Ignore:        rule.Ignore,
 			})
 		}
+		groupID := uint64(0)
+		if len(singleton.NotificationList[alert.NotificationTag]) < 1 {
+			continue
+		}
+		for _, n := range singleton.NotificationList[alert.NotificationTag] {
+			groupID = n.ID
+			break
+		}
 		alerts = append(alerts, &model.V1AlertRule{
 			V1Common: model.V1Common{
 				ID:        alert.ID,
@@ -286,7 +289,7 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 			RulesRaw:            alert.RulesRaw,
 			Enable:              alert.Enable,
 			TriggerMode:         uint8(alert.TriggerMode),
-			NotificationGroupID: notificationTagToID[alert.NotificationTag],
+			NotificationGroupID: groupID,
 			Rules:               rules,
 			FailTriggerTasks:    alert.FailTriggerTasks,
 			RecoverTriggerTasks: alert.RecoverTriggerTasks,
@@ -316,13 +319,16 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 func (cv *compatV1) listService(c *gin.Context) {
 	services := singleton.ServiceSentinelShared.Monitors()
 
-	notificationTagToID := make(map[string]uint64)
-	for id, tag := range singleton.NotificationIDToTag {
-		notificationTagToID[tag] = id
-	}
-
 	vs := make([]*model.V1Service, 0, len(services))
 	for _, s := range services {
+		groupID := uint64(0)
+		if len(singleton.NotificationList[s.NotificationTag]) < 1 {
+			continue
+		}
+		for _, n := range singleton.NotificationList[s.NotificationTag] {
+			groupID = n.ID
+			break
+		}
 		vs = append(vs, &model.V1Service{
 			V1Common: model.V1Common{
 				ID:        s.ID,
@@ -334,7 +340,7 @@ func (cv *compatV1) listService(c *gin.Context) {
 			Target:              s.Target,
 			Duration:            s.Duration,
 			Notify:              s.Notify,
-			NotificationGroupID: notificationTagToID[s.NotificationTag],
+			NotificationGroupID: groupID,
 			Cover:               s.Cover,
 			EnableTriggerTask:   s.EnableTriggerTask,
 			EnableShowInService: s.EnableShowInService,
