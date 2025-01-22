@@ -54,6 +54,8 @@ func (cv *compatV1) serve() {
 		Redirect:   "/login",
 	}))
 	auth.GET("/server", cv.listServer)
+	auth.GET("/notification", cv.listNotification)
+	auth.GET("/alert-rule", cv.listAlertRule)
 }
 
 func (cv *compatV1) mimicLogin(c *gin.Context) {
@@ -200,6 +202,120 @@ func (cv *compatV1) listServer(c *gin.Context) {
 	c.JSON(200, V1Response[[]*model.V1Server]{
 		Success: true,
 		Data:    ssl,
+	})
+}
+
+func (cv *compatV1) listNotification(c *gin.Context) {
+	singleton.NotificationsLock.RLock()
+	defer singleton.NotificationsLock.RUnlock()
+
+	notifications := make([]*model.V1Notification, 0, len(singleton.NotificationList))
+	for _, ns := range singleton.NotificationList {
+		for _, n := range ns {
+			notifications = append(notifications, &model.V1Notification{
+				V1Common: model.V1Common{
+					ID:        n.ID,
+					CreatedAt: n.CreatedAt,
+					UpdatedAt: n.UpdatedAt,
+				},
+				Name:          n.Name,
+				URL:           n.URL,
+				RequestMethod: uint8(n.RequestMethod),
+				RequestType:   uint8(n.RequestType),
+				RequestHeader: n.RequestHeader,
+				RequestBody:   n.RequestBody,
+				VerifyTLS:     n.VerifySSL,
+			})
+		}
+	}
+
+	filterID := c.Query("id")
+	if filterID != "" {
+		oldns := notifications
+		notifications = []*model.V1Notification{}
+		ids := strings.Split(filterID, ",")
+		for _, id := range ids {
+			idUint, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				continue
+			}
+			notifications = appendBinarySearch(notifications, oldns, idUint)
+		}
+	}
+
+	c.JSON(200, V1Response[[]*model.V1Notification]{
+		Success: true,
+		Data:    notifications,
+	})
+}
+
+func (cv *compatV1) listAlertRule(c *gin.Context) {
+	singleton.AlertsLock.RLock()
+	defer singleton.AlertsLock.RUnlock()
+
+	notificationTagToID := make(map[string]uint64)
+	for id, tag := range singleton.NotificationIDToTag {
+		notificationTagToID[tag] = id
+	}
+
+	alerts := make([]*model.V1AlertRule, 0, len(singleton.Alerts))
+	for _, alert := range singleton.Alerts {
+		rules := make([]*model.V1Rule, 0, len(alert.Rules))
+		for _, rule := range alert.Rules {
+			lastCycleStatus := make(map[uint64]bool)
+			for k, v := range rule.LastCycleStatus {
+				lastCycleStatus[k] = v.(bool)
+			}
+			rules = append(rules, &model.V1Rule{
+				Type:            rule.Type,
+				Min:             rule.Min,
+				Max:             rule.Max,
+				CycleStart:      rule.CycleStart,
+				CycleInterval:   rule.CycleInterval,
+				CycleUnit:       rule.CycleUnit,
+				Duration:        rule.Duration,
+				Cover:           rule.Cover,
+				Ignore:          rule.Ignore,
+				NextTransferAt:  rule.NextTransferAt,
+				LastCycleStatus: lastCycleStatus,
+			})
+		}
+		alerts = append(alerts, &model.V1AlertRule{
+			V1Common: model.V1Common{
+				ID:        alert.ID,
+				CreatedAt: alert.CreatedAt,
+				UpdatedAt: alert.UpdatedAt,
+			},
+			Name:                   alert.Name,
+			RulesRaw:               alert.RulesRaw,
+			Enable:                 alert.Enable,
+			TriggerMode:            uint8(alert.TriggerMode),
+			NotificationGroupID:    notificationTagToID[alert.NotificationTag],
+			FailTriggerTasksRaw:    alert.FailTriggerTasksRaw,
+			RecoverTriggerTasksRaw: alert.RecoverTriggerTasksRaw,
+			Rules:                  rules,
+			FailTriggerTasks:       alert.FailTriggerTasks,
+			RecoverTriggerTasks:    alert.RecoverTriggerTasks,
+		})
+	}
+
+	filterID := c.Query("id")
+	if filterID != "" {
+		oldalerts := alerts
+		alerts = []*model.V1AlertRule{}
+		ids := strings.Split(filterID, ",")
+		for _, id := range ids {
+			idUint, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				continue
+			}
+			alerts = appendBinarySearch(alerts, oldalerts, idUint)
+		}
+	}
+
+	c.JSON(200, V1Response[[]*model.V1AlertRule]{
+		Success: true,
+		Data:    alerts,
 	})
 }
 

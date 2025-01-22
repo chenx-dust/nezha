@@ -186,10 +186,62 @@ type V1LoginResponse struct {
 	Token  string `json:"token,omitempty"`
 }
 
+type V1Notification struct {
+	V1Common
+	Name          string `json:"name"`
+	URL           string `json:"url"`
+	RequestMethod uint8  `json:"request_method"`
+	RequestType   uint8  `json:"request_type"`
+	RequestHeader string `json:"request_header" gorm:"type:longtext"`
+	RequestBody   string `json:"request_body" gorm:"type:longtext"`
+	VerifyTLS     *bool  `json:"verify_tls,omitempty"`
+}
+
+type V1Rule struct {
+	// 指标类型，cpu、memory、swap、disk、net_in_speed、net_out_speed
+	// net_all_speed、transfer_in、transfer_out、transfer_all、offline
+	// transfer_in_cycle、transfer_out_cycle、transfer_all_cycle
+	Type          string          `json:"type"`
+	Min           float64         `json:"min,omitempty" validate:"optional"`                                                        // 最小阈值 (百分比、字节 kb ÷ 1024)
+	Max           float64         `json:"max,omitempty" validate:"optional"`                                                        // 最大阈值 (百分比、字节 kb ÷ 1024)
+	CycleStart    *time.Time      `json:"cycle_start,omitempty" validate:"optional"`                                                // 流量统计的开始时间
+	CycleInterval uint64          `json:"cycle_interval,omitempty" validate:"optional"`                                             // 流量统计周期
+	CycleUnit     string          `json:"cycle_unit,omitempty" enums:"hour,day,week,month,year" validate:"optional" default:"hour"` // 流量统计周期单位，默认hour,可选(hour, day, week, month, year)
+	Duration      uint64          `json:"duration,omitempty" validate:"optional"`                                                   // 持续时间 (秒)
+	Cover         uint64          `json:"cover"`                                                                                    // 覆盖范围 RuleCoverAll/IgnoreAll
+	Ignore        map[uint64]bool `json:"ignore,omitempty" validate:"optional"`                                                     // 覆盖范围的排除
+
+	// 只作为缓存使用，记录下次该检测的时间
+	NextTransferAt  map[uint64]time.Time `json:"-"`
+	LastCycleStatus map[uint64]bool      `json:"-"`
+}
+
+type V1AlertRule struct {
+	V1Common
+	Name                   string    `json:"name"`
+	RulesRaw               string    `json:"-"`
+	Enable                 *bool     `json:"enable,omitempty"`
+	TriggerMode            uint8     `gorm:"default:0" json:"trigger_mode"` // 触发模式: 0-始终触发(默认) 1-单次触发
+	NotificationGroupID    uint64    `json:"notification_group_id"`         // 该报警规则所在的通知组
+	FailTriggerTasksRaw    string    `gorm:"default:'[]'" json:"-"`
+	RecoverTriggerTasksRaw string    `gorm:"default:'[]'" json:"-"`
+	Rules                  []*V1Rule `gorm:"-" json:"rules"`
+	FailTriggerTasks       []uint64  `gorm:"-" json:"fail_trigger_tasks"`    // 失败时执行的触发任务id
+	RecoverTriggerTasks    []uint64  `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
+}
+
 func (s *V1Server) GetID() uint64 {
 	return s.ID
 }
 
 func (s *V1ServerGroup) GetID() uint64 {
+	return s.ID
+}
+
+func (s *V1Notification) GetID() uint64 {
+	return s.ID
+}
+
+func (s *V1AlertRule) GetID() uint64 {
 	return s.ID
 }
