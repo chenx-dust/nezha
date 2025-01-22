@@ -210,24 +210,18 @@ type V1Rule struct {
 	Duration      uint64          `json:"duration,omitempty" validate:"optional"`                                                   // 持续时间 (秒)
 	Cover         uint64          `json:"cover"`                                                                                    // 覆盖范围 RuleCoverAll/IgnoreAll
 	Ignore        map[uint64]bool `json:"ignore,omitempty" validate:"optional"`                                                     // 覆盖范围的排除
-
-	// 只作为缓存使用，记录下次该检测的时间
-	NextTransferAt  map[uint64]time.Time `json:"-"`
-	LastCycleStatus map[uint64]bool      `json:"-"`
 }
 
 type V1AlertRule struct {
 	V1Common
-	Name                   string    `json:"name"`
-	RulesRaw               string    `json:"-"`
-	Enable                 *bool     `json:"enable,omitempty"`
-	TriggerMode            uint8     `gorm:"default:0" json:"trigger_mode"` // 触发模式: 0-始终触发(默认) 1-单次触发
-	NotificationGroupID    uint64    `json:"notification_group_id"`         // 该报警规则所在的通知组
-	FailTriggerTasksRaw    string    `gorm:"default:'[]'" json:"-"`
-	RecoverTriggerTasksRaw string    `gorm:"default:'[]'" json:"-"`
-	Rules                  []*V1Rule `gorm:"-" json:"rules"`
-	FailTriggerTasks       []uint64  `gorm:"-" json:"fail_trigger_tasks"`    // 失败时执行的触发任务id
-	RecoverTriggerTasks    []uint64  `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
+	Name                string    `json:"name"`
+	RulesRaw            string    `json:"-"`
+	Enable              *bool     `json:"enable,omitempty"`
+	TriggerMode         uint8     `gorm:"default:0" json:"trigger_mode"` // 触发模式: 0-始终触发(默认) 1-单次触发
+	NotificationGroupID uint64    `json:"notification_group_id"`         // 该报警规则所在的通知组
+	Rules               []*V1Rule `gorm:"-" json:"rules"`
+	FailTriggerTasks    []uint64  `gorm:"-" json:"fail_trigger_tasks"`    // 失败时执行的触发任务id
+	RecoverTriggerTasks []uint64  `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
 }
 
 type V1Service struct {
@@ -241,10 +235,8 @@ type V1Service struct {
 	NotificationGroupID uint64 `json:"notification_group_id"` // 当前服务监控所属的通知组 ID
 	Cover               uint8  `json:"cover"`
 
-	EnableTriggerTask      bool   `gorm:"default: false" json:"enable_trigger_task,omitempty"`
-	EnableShowInService    bool   `gorm:"default: false" json:"enable_show_in_service,omitempty"`
-	FailTriggerTasksRaw    string `gorm:"default:'[]'" json:"-"`
-	RecoverTriggerTasksRaw string `gorm:"default:'[]'" json:"-"`
+	EnableTriggerTask   bool `gorm:"default: false" json:"enable_trigger_task,omitempty"`
+	EnableShowInService bool `gorm:"default: false" json:"enable_show_in_service,omitempty"`
 
 	FailTriggerTasks    []uint64 `gorm:"-" json:"fail_trigger_tasks"`    // 失败时执行的触发任务id
 	RecoverTriggerTasks []uint64 `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
