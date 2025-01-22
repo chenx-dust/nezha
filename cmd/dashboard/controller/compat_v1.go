@@ -81,8 +81,6 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 		}
 	}
 
-	c.SetCookie("nz-jwt", apiToken, 3600, "/", "", false, false)
-
 	if !isLogin {
 		c.JSON(400, V1Response[any]{
 			Error: "ApiErrorUnauthorized",
@@ -318,7 +316,7 @@ func (cv *compatV1) getServerStat(c *gin.Context, withPublicNote bool) ([]byte, 
 func (cv *compatV1) listServerGroup(c *gin.Context) {
 	var sgRes []model.V1ServerGroupResponseItem
 
-	tagID := uint64(0)
+	tagID := uint64(1)
 	for tag, ids := range singleton.ServerTagToIDList {
 		sgRes = append(sgRes, model.V1ServerGroupResponseItem{
 			Group: model.V1ServerGroup{
@@ -332,6 +330,23 @@ func (cv *compatV1) listServerGroup(c *gin.Context) {
 			Servers: ids,
 		})
 		tagID++ // 虽然无法保证 tagID 的唯一性，但至少在绝大部分情况下不会出问题
+	}
+
+	filterID := c.Query("id")
+	if filterID != "" {
+		oldsgRes := sgRes
+		sgRes = []model.V1ServerGroupResponseItem{}
+		ids := strings.Split(filterID, ",")
+		for _, id := range ids {
+			idUint, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				continue
+			}
+			if idUint >= uint64(len(oldsgRes)) {
+				continue
+			}
+			sgRes = append(sgRes, oldsgRes[idUint])
+		}
 	}
 
 	c.JSON(200, V1Response[[]model.V1ServerGroupResponseItem]{

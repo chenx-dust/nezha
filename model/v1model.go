@@ -189,3 +189,7 @@ type V1LoginResponse struct {
 func (s *V1Server) GetID() uint64 {
 	return s.ID
 }
+
+func (s *V1ServerGroup) GetID() uint64 {
+	return s.ID
+}
