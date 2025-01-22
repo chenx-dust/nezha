@@ -55,6 +55,9 @@ func Authorize(opt AuthorizeOption) func(*gin.Context) {
 			apiToken := c.GetHeader("Authorization")
 			// 兼容 v1 的 API 鉴权
 			apiToken = strings.TrimPrefix(apiToken, "Bearer ")
+			if apiToken == "" {
+				apiToken, _ = c.Cookie("nz-jwt")
+			}
 			if apiToken != "" {
 				var u model.User
 				singleton.ApiLock.RLock()

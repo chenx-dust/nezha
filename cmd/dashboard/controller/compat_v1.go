@@ -89,6 +89,7 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 			Error: "ApiErrorUnauthorized",
 		})
 	} else {
+		c.SetCookie("nz-jwt", apiToken, 60*60*24*365, "/", "", false, false)
 		c.JSON(200, V1Response[model.V1LoginResponse]{
 			Success: true,
 			Data: model.V1LoginResponse{
