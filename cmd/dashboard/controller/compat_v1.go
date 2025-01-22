@@ -2,8 +2,10 @@
 package controller
 
 import (
+	"cmp"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -79,6 +81,8 @@ func (cv *compatV1) mimicLogin(c *gin.Context) {
 		}
 	}
 
+	c.SetCookie("nz-jwt", apiToken, 3600, "/", "", false, false)
+
 	if !isLogin {
 		c.JSON(400, V1Response[any]{
 			Error: "ApiErrorUnauthorized",
@@ -98,6 +102,15 @@ func idToUuid(id uint64) string {
 	str := strconv.FormatUint(id, 10)
 	str = strings.Repeat("0", 32-len(str)) + str
 	return str[0:8] + "-" + str[8:12] + "-" + str[12:16] + "-" + str[16:20] + "-" + str[20:]
+}
+
+func appendBinarySearch[S ~[]E, E model.V1CommonInterface](x, y S, target uint64) S {
+	if i, ok := slices.BinarySearchFunc(y, target, func(e E, t uint64) int {
+		return cmp.Compare(e.GetID(), t)
+	}); ok {
+		x = append(x, y[i])
+	}
+	return x
 }
 
 func (cv *compatV1) listServer(c *gin.Context) {
@@ -170,6 +183,20 @@ func (cv *compatV1) listServer(c *gin.Context) {
 			PrevTransferInSnapshot:  s.PrevTransferInSnapshot,
 			PrevTransferOutSnapshot: s.PrevTransferOutSnapshot,
 		})
+	}
+
+	filterID := c.Query("id")
+	if filterID != "" {
+		oldssl := ssl
+		ssl = []*model.V1Server{}
+		ids := strings.Split(filterID, ",")
+		for _, id := range ids {
+			idUint, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				continue
+			}
+			ssl = appendBinarySearch(ssl, oldssl, idUint)
+		}
 	}
 
 	c.JSON(200, V1Response[[]*model.V1Server]{

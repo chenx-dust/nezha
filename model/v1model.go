@@ -6,6 +6,10 @@ import (
 	pb "github.com/naiba/nezha/proto"
 )
 
+type V1CommonInterface interface {
+	GetID() uint64
+}
+
 type V1Host struct {
 	Platform        string   `json:"platform,omitempty"`
 	PlatformVersion string   `json:"platform_version,omitempty"`
@@ -180,4 +184,8 @@ type V1LoginRequest struct {
 type V1LoginResponse struct {
 	Expire string `json:"expire,omitempty"`
 	Token  string `json:"token,omitempty"`
+}
+
+func (s *V1Server) GetID() uint64 {
+	return s.ID
 }
