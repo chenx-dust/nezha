@@ -56,6 +56,7 @@ func (cv *compatV1) serve() {
 	auth.GET("/server", cv.listServer)
 	auth.GET("/notification", cv.listNotification)
 	auth.GET("/alert-rule", cv.listAlertRule)
+	auth.GET("/service/list", cv.listService)
 }
 
 func (cv *compatV1) mimicLogin(c *gin.Context) {
@@ -316,6 +317,62 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 	c.JSON(200, V1Response[[]*model.V1AlertRule]{
 		Success: true,
 		Data:    alerts,
+	})
+}
+
+func (cv *compatV1) listService(c *gin.Context) {
+	services := singleton.ServiceSentinelShared.Monitors()
+
+	notificationTagToID := make(map[string]uint64)
+	for id, tag := range singleton.NotificationIDToTag {
+		notificationTagToID[tag] = id
+	}
+
+	vs := make([]*model.V1Service, 0, len(services))
+	for _, s := range services {
+		vs = append(vs, &model.V1Service{
+			V1Common: model.V1Common{
+				ID:        s.ID,
+				CreatedAt: s.CreatedAt,
+				UpdatedAt: s.UpdatedAt,
+			},
+			Name:                   s.Name,
+			Type:                   s.Type,
+			Target:                 s.Target,
+			Duration:               s.Duration,
+			Notify:                 s.Notify,
+			NotificationGroupID:    notificationTagToID[s.NotificationTag],
+			Cover:                  s.Cover,
+			EnableTriggerTask:      s.EnableTriggerTask,
+			EnableShowInService:    s.EnableShowInService,
+			FailTriggerTasksRaw:    s.FailTriggerTasksRaw,
+			RecoverTriggerTasksRaw: s.RecoverTriggerTasksRaw,
+			FailTriggerTasks:       s.FailTriggerTasks,
+			RecoverTriggerTasks:    s.RecoverTriggerTasks,
+			MinLatency:             s.MinLatency,
+			MaxLatency:             s.MaxLatency,
+			LatencyNotify:          s.LatencyNotify,
+			SkipServers:            s.SkipServers,
+		})
+	}
+
+	filterID := c.Query("id")
+	if filterID != "" {
+		oldvs := vs
+		vs = []*model.V1Service{}
+		ids := strings.Split(filterID, ",")
+		for _, id := range ids {
+			idUint, err := strconv.ParseUint(id, 10, 64)
+			if err != nil {
+				continue
+			}
+			vs = appendBinarySearch(vs, oldvs, idUint)
+		}
+	}
+
+	c.JSON(200, V1Response[[]*model.V1Service]{
+		Success: true,
+		Data:    vs,
 	})
 }
 

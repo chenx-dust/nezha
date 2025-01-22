@@ -230,6 +230,32 @@ type V1AlertRule struct {
 	RecoverTriggerTasks    []uint64  `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
 }
 
+type V1Service struct {
+	V1Common
+	Name                string `json:"name"`
+	Type                uint8  `json:"type"`
+	Target              string `json:"target"`
+	SkipServersRaw      string `json:"-"`
+	Duration            uint64 `json:"duration"`
+	Notify              bool   `json:"notify,omitempty"`
+	NotificationGroupID uint64 `json:"notification_group_id"` // 当前服务监控所属的通知组 ID
+	Cover               uint8  `json:"cover"`
+
+	EnableTriggerTask      bool   `gorm:"default: false" json:"enable_trigger_task,omitempty"`
+	EnableShowInService    bool   `gorm:"default: false" json:"enable_show_in_service,omitempty"`
+	FailTriggerTasksRaw    string `gorm:"default:'[]'" json:"-"`
+	RecoverTriggerTasksRaw string `gorm:"default:'[]'" json:"-"`
+
+	FailTriggerTasks    []uint64 `gorm:"-" json:"fail_trigger_tasks"`    // 失败时执行的触发任务id
+	RecoverTriggerTasks []uint64 `gorm:"-" json:"recover_trigger_tasks"` // 恢复时执行的触发任务id
+
+	MinLatency    float32 `json:"min_latency"`
+	MaxLatency    float32 `json:"max_latency"`
+	LatencyNotify bool    `json:"latency_notify,omitempty"`
+
+	SkipServers map[uint64]bool `gorm:"-" json:"skip_servers"`
+}
+
 func (s *V1Server) GetID() uint64 {
 	return s.ID
 }
@@ -243,5 +269,9 @@ func (s *V1Notification) GetID() uint64 {
 }
 
 func (s *V1AlertRule) GetID() uint64 {
+	return s.ID
+}
+
+func (s *V1Service) GetID() uint64 {
 	return s.ID
 }
