@@ -263,22 +263,16 @@ func (cv *compatV1) listAlertRule(c *gin.Context) {
 	for _, alert := range singleton.Alerts {
 		rules := make([]*model.V1Rule, 0, len(alert.Rules))
 		for _, rule := range alert.Rules {
-			lastCycleStatus := make(map[uint64]bool)
-			for k, v := range rule.LastCycleStatus {
-				lastCycleStatus[k] = v.(bool)
-			}
 			rules = append(rules, &model.V1Rule{
-				Type:            rule.Type,
-				Min:             rule.Min,
-				Max:             rule.Max,
-				CycleStart:      rule.CycleStart,
-				CycleInterval:   rule.CycleInterval,
-				CycleUnit:       rule.CycleUnit,
-				Duration:        rule.Duration,
-				Cover:           rule.Cover,
-				Ignore:          rule.Ignore,
-				NextTransferAt:  rule.NextTransferAt,
-				LastCycleStatus: lastCycleStatus,
+				Type:          rule.Type,
+				Min:           rule.Min,
+				Max:           rule.Max,
+				CycleStart:    rule.CycleStart,
+				CycleInterval: rule.CycleInterval,
+				CycleUnit:     rule.CycleUnit,
+				Duration:      rule.Duration,
+				Cover:         rule.Cover,
+				Ignore:        rule.Ignore,
 			})
 		}
 		alerts = append(alerts, &model.V1AlertRule{
