@@ -26,6 +26,26 @@ Then follow the prompt. *English version temporarily not provided.*
 
 然后跟随指引即可。*暂不提供英语版本。*
 
+## Compatible API / 兼容 API
+
+所有已实现的 v1 API 在文件 [compat_v1.go](https://github.com/chenx-dust/nezha-compat/blob/compat/cmd/dashboard/controller/compat_v1.go) 中。目前支持了：
+
+- 前台界面的所有 API （包括 WebSocket）
+- 后台界面的部分只读 API
+  - 支持基于 API Key 的登录
+  - 支持服务器、告警、通知的信息获取
+  - 可以兼容 [hiDandelion/Nezha-Mobile](https://github.com/hiDandelion/Nezha-Mobile) 的大部分只读功能
+- 关于鉴权
+  - 基于 API Key 实现的鉴权
+  - 支持模仿 `/api/v1/login` 接口实现登录
+    - 账号： API Key
+    - 密码： 任意
+  - 支持三种提供 API Key 的方式
+    - Cookie: `nz-jwt` （v1 版本默认使用）
+    - Header: `Authorization: Bearer <API Key>` （v1 版本 API 使用）
+    - Header: `Authorization: <API Key>` （v0 版本 API 使用）
+  - 由于 API Key 鉴权方式较弱，故没有实现任何可能造成副作用的 API （如：终端、修改参数等）
+
 ## Acknowledge / 致谢
 
 - [nezhahq/nezha](https://github.com/nezhahq/nezha): Original Nezha Dashboard. 原版哪吒面板。

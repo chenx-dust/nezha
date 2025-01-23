@@ -32,6 +32,12 @@ type V1Response[T any] struct {
 
 func (cv *compatV1) serve() {
 	r := cv.r.Group("")
+	r.Use(mygin.Authorize(mygin.AuthorizeOption{
+		MemberOnly: false,
+		IsPage:     false,
+		AllowAPI:   true,
+	}))
+
 	r.GET("/ws/server", cv.serverStream)
 	r.GET("/server-group", cv.listServerGroup)
 
